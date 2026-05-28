@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Employee{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="table-card">
+            <h4 class="mb-4 fw-bold">
+                <i class="fas fa-edit me-2 text-warning"></i>Edit Employee
+            </h4>
+            
+            <form method="POST">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="name" class="form-label fw-bold">Full Name *</label>
+                        <input type="text" class="form-control" id="name" name="name" 
+                               value="{{ employee.name }}" required>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="email" class="form-label fw-bold">Email *</label>
+                        <input type="email" class="form-control" id="email" name="email" 
+                               value="{{ employee.email }}" required>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="position" class="form-label fw-bold">Position</label>
+                        <input type="text" class="form-control" id="position" name="position" 
+                               value="{{ employee.position or '' }}">
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="department_id" class="form-label fw-bold">Department</label>
+                        <select class="form-select" id="department_id" name="department_id">
+                            <option value="">Select Department</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept.id }}" {% if employee.department_id == dept.id %}selected{% endif %}>
+                                {{ dept.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="phone" class="form-label fw-bold">Phone Number</label>
+                        <input type="text" class="form-control" id="phone" name="phone" 
+                               value="{{ employee.phone or '' }}">
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="salary" class="form-label fw-bold">Annual Salary (₹)</label>
+                        <input type="number" class="form-control" id="salary" name="salary" step="5000"
+                               value="{{ employee.salary or 0 }}">
+                    </div>
+                </div>
+                
+                <div class="d-flex gap-2 mt-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Update Employee
+                    </button>
+                    <a href="{{ url_for('employees') }}" class="btn btn-secondary">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table-card {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .form-control, .form-select {
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+        padding: 10px 15px;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 0.2rem rgba(79, 70, 229, 0.25);
+    }
+</style>
+{% endblock %}

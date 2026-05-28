@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+
+{% block title %}Departments{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="welcome-header">
+        <h1 class="mb-0">
+            <i class="fas fa-building me-2 text-primary"></i>Department Management
+        </h1>
+        <small class="text-muted">Manage all departments in your organization</small>
+    </div>
+    <a href="{{ url_for('add_department') }}" class="btn btn-primary btn-lg">
+        <i class="fas fa-plus-circle me-2"></i>Add New Department
+    </a>
+</div>
+
+<!-- Department Stats Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <div class="card-body">
+                <h6 class="card-title"><i class="fas fa-building"></i> TOTAL DEPARTMENTS</h6>
+                <div class="stat-number">{{ departments|length }}</div>
+                <p class="card-text">Departments in system</p>
+            </div>
+            <div class="stat-icon"><i class="fas fa-building"></i></div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+            <div class="card-body">
+                <h6 class="card-title"><i class="fas fa-check-circle"></i> ACTIVE</h6>
+                <div class="stat-number">{{ departments|selectattr('status', 'equalto', 'Active')|list|length }}</div>
+                <p class="card-text">Active departments</p>
+            </div>
+            <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+            <div class="card-body">
+                <h6 class="card-title"><i class="fas fa-users"></i> TOTAL EMPLOYEES</h6>
+                <div class="stat-number">{{ total_employees }}</div>
+                <p class="card-text">Across all departments</p>
+            </div>
+            <div class="stat-icon"><i class="fas fa-users"></i></div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+            <div class="card-body">
+                <h6 class="card-title"><i class="fas fa-chart-line"></i> TOTAL BUDGET</h6>
+                <div class="stat-number">₹{{ (departments|sum(attribute='budget'))|round|int }}</div>
+                <p class="card-text">Combined department budget</p>
+            </div>
+            <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+        </div>
+    </div>
+</div>
+
+<!-- Departments Table -->
+<div class="table-card">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0 fw-bold">
+            <i class="fas fa-list me-2 text-primary"></i>All Departments
+        </h5>
+        <div class="input-group w-auto">
+            <span class="input-group-text bg-white"><i class="fas fa-search"></i></span>
+            <input type="text" id="searchInput" class="form-control" placeholder="Search departments..." style="width: 250px;">
+        </div>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table table-hover" id="departmentTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Department Name</th>
+                    <th>Manager</th>
+                    <th>Description</th>
+                    <th>Employees</th>
+                    <th>Budget</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for dept in departments %}
+                <tr>
+                    <td><span class="badge bg-secondary">#{{ dept.id }}</span></td>
+                    <td>
+                        <strong>{{ dept.name }}</strong>
+                        <br>
+                        <small class="text-muted">{{ dept.created_at.strftime('%d/%m/%Y') if dept.created_at else '—' }}</small>
+                    </td>
+                    <td>
+                        {% if dept.manager %}
+                            <i class="fas fa-user-tie me-1 text-primary"></i> {{ dept.manager }}
+                        {% else %}
+                            <span class="text-muted">Not assigned</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="max-width: 250px;">
+                            {{ dept.description[:60] + '...' if dept.description and dept.description|length > 60 else dept.description or '—' }}
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge bg-info">{{ dept.employees|length }} employees</span>
+                    </td>
+                    <td>
+                        <strong>₹{{ dept.budget|round|int if dept.budget else 0 }}</strong>
+                        <br>
+                        <small class="text-muted">Annual budget</small>
+                    </td>
+                    <td>
+                        {% if dept.status == 'Active' %}
+                            <span class="status-badge status-active"><i class="fas fa-circle me-1" style="font-size: 8px;"></i> Active</span>
+                        {% else %}
+                            <span class="status-badge status-inactive"><i class="fas fa-circle me-1" style="font-size: 8px;"></i> Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('view_department', id=dept.id) }}" class="btn btn-sm btn-outline-info me-1" title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="{{ url_for('edit_department', id=dept.id) }}" class="btn btn-sm btn-outline-primary me-1" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="{{ url_for('delete_department', id=dept.id) }}" class="btn btn-sm btn-outline-danger" title="Delete" onclick="return confirm('Are you sure you want to delete this department?')">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="text-center py-5">
+                        <i class="fas fa-building fa-3x text-muted mb-3"></i>
+                        <p class="text-muted mb-0">No departments found. Click "Add New Department" to create one.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .stat-card {
+        border: none;
+        border-radius: 15px;
+        overflow: hidden;
+        position: relative;
+        height: 140px;
+        transition: transform 0.3s, box-shadow 0.3s;
+        cursor: pointer;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+    .stat-card .card-body {
+        padding: 20px;
+        height: 100%;
+        position: relative;
+        z-index: 2;
+        color: white;
+    }
+    .stat-card .card-title {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 12px;
+        opacity: 0.9;
+    }
+    .stat-card .stat-number {
+        font-size: 36px;
+        font-weight: 800;
+        margin-bottom: 8px;
+        line-height: 1;
+    }
+    .stat-card .card-text {
+        font-size: 11px;
+        margin-bottom: 0;
+        opacity: 0.8;
+    }
+    .stat-icon {
+        position: absolute;
+        right: 15px;
+        bottom: 15px;
+        font-size: 55px;
+        opacity: 0.12;
+        transition: all 0.3s ease;
+        color: white;
+    }
+    .stat-card:hover .stat-icon {
+        opacity: 0.2;
+        transform: scale(1.05);
+    }
+    .table-card {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .table th {
+        background: #f8f9fc;
+        color: #4e73df;
+        font-weight: 600;
+        font-size: 13px;
+        border: none;
+        padding: 12px 15px;
+    }
+    .table td {
+        padding: 12px 15px;
+        vertical-align: middle;
+        border-bottom: 1px solid #e3e6f0;
+    }
+    .table tbody tr:hover {
+        background: #f8f9fc;
+    }
+    .status-badge {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .status-active {
+        background: #d1fae5;
+        color: #065f46;
+    }
+    .status-inactive {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+    .welcome-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: #2c3e50;
+    }
+    .btn-outline-primary {
+        border-color: #4e73df;
+        color: #4e73df;
+    }
+    .btn-outline-primary:hover {
+        background: #4e73df;
+        color: white;
+    }
+    .btn-outline-danger {
+        border-color: #e74a3b;
+        color: #e74a3b;
+    }
+    .btn-outline-danger:hover {
+        background: #e74a3b;
+        color: white;
+    }
+    .btn-outline-info {
+        border-color: #36b9cc;
+        color: #36b9cc;
+    }
+    .btn-outline-info:hover {
+        background: #36b9cc;
+        color: white;
+    }
+</style>
+
+<script>
+    // Search functionality
+    document.getElementById('searchInput').addEventListener('keyup', function() {
+        let searchValue = this.value.toLowerCase();
+        let rows = document.querySelectorAll('#departmentTable tbody tr');
+        
+        rows.forEach(row => {
+            let name = row.cells[1]?.innerText.toLowerCase() || '';
+            let manager = row.cells[2]?.innerText.toLowerCase() || '';
+            let desc = row.cells[3]?.innerText.toLowerCase() || '';
+            if (name.includes(searchValue) || manager.includes(searchValue) || desc.includes(searchValue)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+</script>
+{% endblock %}

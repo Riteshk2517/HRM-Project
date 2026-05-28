@@ -1,0 +1,610 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Welcome Header -->
+<div class="welcome-section">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="welcome-title">
+                <i class="fas fa-chalkboard-user me-3 text-primary"></i>
+                Welcome back!
+            </h1>
+            <p class="text-white-50 mb-0">Here's what's happening with your HRM system today.</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="date-badge">
+                <i class="fas fa-calendar-alt me-2"></i>
+                <span id="currentDate"></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card card-employees" data-card="employees">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <h6 class="stat-label">TOTAL EMPLOYEES</h6>
+                    <h2 class="stat-number">{{ total_employees }}</h2>
+                    <p class="stat-trend">
+                        {% if total_employees > 0 %}
+                            <i class="fas fa-users"></i> Total employees
+                        {% else %}
+                            <i class="fas fa-info-circle"></i> No employees yet
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="stat-icon-large">
+                    <i class="fas fa-users"></i>
+                </div>
+            </div>
+            <div class="stat-progress">
+                <div class="progress-bar" style="width: {{ 0 if total_employees == 0 else 75 }}%"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card card-departments" data-card="departments">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <h6 class="stat-label">DEPARTMENTS</h6>
+                    <h2 class="stat-number">{{ total_departments }}</h2>
+                    <p class="stat-trend">
+                        {% if total_departments > 0 %}
+                            <i class="fas fa-building"></i> Active departments
+                        {% else %}
+                            <i class="fas fa-plus-circle"></i> Add your first department
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="stat-icon-large">
+                    <i class="fas fa-building"></i>
+                </div>
+            </div>
+            <div class="stat-progress">
+                <div class="progress-bar" style="width: {{ 0 if total_departments == 0 else 100 }}%"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card card-budget" data-card="budget">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <h6 class="stat-label">TOTAL BUDGET</h6>
+                    <h2 class="stat-number">₹{{ total_budget|round|int }}</h2>
+                    <p class="stat-trend">
+                        {% if total_budget > 0 %}
+                            <i class="fas fa-chart-line"></i> Total department budget
+                        {% else %}
+                            <i class="fas fa-chart-line"></i> No budget allocated
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="stat-icon-large">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+            </div>
+            <div class="stat-progress">
+                <div class="progress-bar" style="width: {{ 0 if total_budget == 0 else 100 }}%"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="chart-card">
+            <div class="chart-header">
+                <div>
+                    <i class="fas fa-chart-bar chart-icon"></i>
+                    <h5>Department-wise Employee Distribution</h5>
+                    <p class="mb-0">Employee count by department</p>
+                </div>
+            </div>
+            <div class="chart-body">
+                <canvas id="deptChart" height="280"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="chart-card">
+            <div class="chart-header">
+                <div>
+                    <i class="fas fa-chart-pie chart-icon"></i>
+                    <h5>Department Budget Comparison</h5>
+                    <p class="mb-0">Budget allocation by department</p>
+                </div>
+            </div>
+            <div class="chart-body">
+                <canvas id="budgetChart" height="280"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Hires & Quick Actions Row -->
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="recent-card">
+            <div class="card-header-custom">
+                <div>
+                    <i class="fas fa-user-plus me-2 text-primary"></i>
+                    <h5 class="mb-0">Recent Hires</h5>
+                    <p class="text-muted small mb-0">Latest employees joined</p>
+                </div>
+                <a href="{{ url_for('employees') }}" class="btn-view-all">View All <i class="fas fa-arrow-right ms-1"></i></a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-modern">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Department</th>
+                            <th>Position</th>
+                            <th>Join Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for emp in recent_employees %}
+                        <tr>
+                            <td>
+                                <div class="employee-info">
+                                    <div class="employee-avatar" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                                        {{ emp[1][0] }}{{ emp[2][0] if emp[2] else '' }}
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold">{{ emp[1] }} {{ emp[2] or '' }}</div>
+                                        <small class="text-muted">{{ emp[3] }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if emp[4] and emp[4] != 'Not Assigned' %}
+                                    <span class="dept-badge">{{ emp[4] }}</span>
+                                {% else %}
+                                    <span class="text-muted">Not Assigned</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ emp[5] or '—' }}</td>
+                            <td>{{ emp[6] or '—' }}</td>
+                            <td>
+                                <span class="status-badge status-active">
+                                    <i class="fas fa-circle me-1" style="font-size: 8px;"></i> Active
+                                </span>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5">
+                                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                <p class="text-muted mb-0">No employees found. Click "Add Employee" to get started.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="quick-actions-card">
+            <div class="card-header-custom">
+                <div>
+                    <i class="fas fa-bolt me-2 text-warning"></i>
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+            </div>
+            <div class="actions-list">
+                <a href="{{ url_for('add_department') }}" class="action-item">
+                    <div class="action-icon" style="background: #e8eaf6; color: #4e73df;">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <div class="action-info">
+                        <h6 class="mb-0">Add Department</h6>
+                        <small class="text-muted">Create a new department</small>
+                    </div>
+                    <i class="fas fa-chevron-right action-arrow"></i>
+                </a>
+                <a href="{{ url_for('add_employee') }}" class="action-item">
+                    <div class="action-icon" style="background: #e8f5e9; color: #27ae60;">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                    <div class="action-info">
+                        <h6 class="mb-0">Add Employee</h6>
+                        <small class="text-muted">Register new employee</small>
+                    </div>
+                    <i class="fas fa-chevron-right action-arrow"></i>
+                </a>
+                <a href="{{ url_for('employees') }}" class="action-item">
+                    <div class="action-icon" style="background: #fff3e0; color: #f39c12;">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="action-info">
+                        <h6 class="mb-0">View Employees</h6>
+                        <small class="text-muted">See all employees</small>
+                    </div>
+                    <i class="fas fa-chevron-right action-arrow"></i>
+                </a>
+                <a href="{{ url_for('departments') }}" class="action-item">
+                    <div class="action-icon" style="background: #e3f2fd; color: #2980b9;">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="action-info">
+                        <h6 class="mb-0">View Departments</h6>
+                        <small class="text-muted">Manage departments</small>
+                    </div>
+                    <i class="fas fa-chevron-right action-arrow"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Welcome Section */
+    .welcome-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 20px;
+        padding: 30px;
+        margin-bottom: 30px;
+        color: white;
+    }
+    .welcome-title {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+    .date-badge {
+        background: rgba(255,255,255,0.2);
+        backdrop-filter: blur(10px);
+        padding: 8px 20px;
+        border-radius: 30px;
+        display: inline-block;
+        font-size: 14px;
+    }
+    
+    /* Enhanced Stat Cards */
+    .stat-card {
+        border-radius: 20px;
+        overflow: hidden;
+        position: relative;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    .stat-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 35px -10px rgba(0,0,0,0.2);
+    }
+    .stat-content {
+        padding: 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        position: relative;
+        z-index: 2;
+        color: white;
+    }
+    .stat-label {
+        font-size: 13px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        margin-bottom: 12px;
+        opacity: 0.85;
+    }
+    .stat-number {
+        font-size: 42px;
+        font-weight: 800;
+        margin-bottom: 8px;
+        line-height: 1;
+    }
+    .stat-trend {
+        font-size: 12px;
+        margin-bottom: 0;
+        opacity: 0.8;
+    }
+    .stat-icon-large {
+        font-size: 70px;
+        opacity: 0.15;
+        transition: all 0.3s;
+    }
+    .stat-card:hover .stat-icon-large {
+        opacity: 0.25;
+        transform: scale(1.05);
+    }
+    .stat-progress {
+        height: 4px;
+        background: rgba(255,255,255,0.2);
+    }
+    .progress-bar {
+        height: 100%;
+        background: rgba(255,255,255,0.8);
+        width: 0%;
+    }
+    
+    /* Card Colors */
+    .card-employees { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    .card-departments { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+    .card-budget { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+    
+    /* Chart Cards */
+    .chart-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        overflow: hidden;
+        transition: all 0.3s;
+    }
+    .chart-card:hover {
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    .chart-header {
+        padding: 20px 25px;
+        border-bottom: 1px solid #eef2f6;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .chart-header h5 {
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 4px;
+        color: #2c3e50;
+    }
+    .chart-icon {
+        font-size: 20px;
+        color: #4e73df;
+        margin-right: 10px;
+    }
+    .chart-body {
+        padding: 20px;
+    }
+    
+    /* Recent Card */
+    .recent-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        overflow: hidden;
+    }
+    .card-header-custom {
+        padding: 20px 25px;
+        border-bottom: 1px solid #eef2f6;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .card-header-custom h5 {
+        font-size: 16px;
+        font-weight: 700;
+        color: #2c3e50;
+    }
+    .btn-view-all {
+        color: #4e73df;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    .btn-view-all:hover {
+        color: #224abe;
+    }
+    
+    /* Modern Table */
+    .table-modern {
+        margin-bottom: 0;
+    }
+    .table-modern thead th {
+        background: #f8fafc;
+        color: #4a5568;
+        font-weight: 600;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border: none;
+        padding: 15px 20px;
+    }
+    .table-modern tbody td {
+        padding: 15px 20px;
+        vertical-align: middle;
+        border-bottom: 1px solid #edf2f7;
+    }
+    .employee-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .employee-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 16px;
+    }
+    .dept-badge {
+        background: #e8eaf6;
+        color: #4e73df;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+    
+    /* Quick Actions */
+    .quick-actions-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        overflow: hidden;
+        height: 100%;
+    }
+    .actions-list {
+        padding: 10px 0;
+    }
+    .action-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 15px 25px;
+        text-decoration: none;
+        transition: all 0.2s;
+        border-bottom: 1px solid #f0f2f5;
+    }
+    .action-item:last-child {
+        border-bottom: none;
+    }
+    .action-item:hover {
+        background: #f8fafc;
+        padding-left: 30px;
+    }
+    .action-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+    }
+    .action-info {
+        flex: 1;
+    }
+    .action-info h6 {
+        font-size: 14px;
+        font-weight: 600;
+        color: #2c3e50;
+    }
+    .action-arrow {
+        color: #cbd5e0;
+        font-size: 12px;
+        transition: all 0.2s;
+    }
+    .action-item:hover .action-arrow {
+        color: #4e73df;
+        transform: translateX(3px);
+    }
+    
+    @media (max-width: 768px) {
+        .welcome-section {
+            padding: 20px;
+        }
+        .welcome-title {
+            font-size: 22px;
+        }
+        .stat-number {
+            font-size: 32px;
+        }
+        .stat-icon-large {
+            font-size: 50px;
+        }
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    // Display current date
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('currentDate').innerText = new Date().toLocaleDateString('en-US', options);
+    
+    $(document).ready(function() {
+        $.getJSON('/api/department_stats', function(data) {
+            // Employee Distribution Bar Chart
+            const ctx1 = document.getElementById('deptChart').getContext('2d');
+            new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: data.departments,
+                    datasets: [{
+                        label: 'Number of Employees',
+                        data: data.employee_counts,
+                        backgroundColor: 'rgba(78, 115, 223, 0.8)',
+                        borderRadius: 8,
+                        barPercentage: 0.65,
+                        categoryPercentage: 0.8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1e293b',
+                            titleColor: '#fff',
+                            bodyColor: '#cbd5e1',
+                            padding: 10,
+                            callbacks: {
+                                label: function(context) {
+                                    return `Employees: ${context.raw}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            stepSize: 1,
+                            grid: { color: 'rgba(0,0,0,0.05)' },
+                            title: { display: true, text: 'Number of Employees', font: { size: 11 } }
+                        },
+                        x: {
+                            grid: { display: false },
+                            title: { display: true, text: 'Departments', font: { size: 11 } }
+                        }
+                    }
+                }
+            });
+            
+            // Budget Pie Chart
+            const ctx2 = document.getElementById('budgetChart').getContext('2d');
+            new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: data.departments,
+                    datasets: [{
+                        data: data.budgets,
+                        backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#858796'],
+                        borderWidth: 0,
+                        hoverOffset: 10,
+                        cutout: '65%'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: { font: { size: 10 }, boxWidth: 10, padding: 8 }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    let value = context.raw || 0;
+                                    let total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    let percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                    return `${label}: ₹${value.toLocaleString()} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }).fail(function() {
+            console.log("No departments data available");
+        });
+    });
+</script>
+{% endblock %}

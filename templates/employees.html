@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Employees{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="welcome-header">
+        <h1 class="mb-0">
+            <i class="fas fa-users me-2 text-primary"></i>Employee Management
+        </h1>
+        <small class="text-muted">Manage all employees in your organization</small>
+    </div>
+    <a href="{{ url_for('add_employee') }}" class="btn btn-primary btn-lg">
+        <i class="fas fa-user-plus me-2"></i>Add New Employee
+    </a>
+</div>
+
+<!-- Employees Table -->
+<div class="table-card">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0 fw-bold">
+            <i class="fas fa-list me-2 text-primary"></i>All Employees
+        </h5>
+        <div class="input-group w-auto">
+            <span class="input-group-text bg-white"><i class="fas fa-search"></i></span>
+            <input type="text" id="searchInput" class="form-control" placeholder="Search employees..." style="width: 250px;">
+        </div>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table table-hover" id="employeeTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Department</th>
+                    <th>Position</th>
+                    <th>Phone</th>
+                    <th>Salary</th>
+                    <th>Hire Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for emp in employees %}
+                <tr>
+                    <td><span class="badge bg-secondary">#{{ emp.id }}</span></td>
+                    <td><strong>{{ emp.name }}</strong></td>
+                    <td>{{ emp.email or '—' }}</td>
+                    <td>
+                        {% if emp.department %}
+                            <span class="dept-badge">{{ emp.department.name }}</span>
+                        {% else %}
+                            <span class="text-muted">Not Assigned</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ emp.position or '—' }}</td>
+                    <td>{{ emp.phone or '—' }}</td>
+                    <td>₹{{ emp.salary|round|int if emp.salary else 0 }}</td>
+                    <td>{{ emp.hire_date.strftime('%d/%m/%Y') if emp.hire_date else '—' }}</td>
+                    <td>
+                        <a href="{{ url_for('edit_employee', id=emp.id) }}" class="btn btn-sm btn-outline-primary me-1" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="{{ url_for('delete_employee', id=emp.id) }}" class="btn btn-sm btn-outline-danger" title="Delete" onclick="return confirm('Are you sure you want to delete this employee?')">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" class="text-center py-5">
+                        <i class="fas fa-user-friends fa-3x text-muted mb-3"></i>
+                        <p class="text-muted mb-0">No employees found. Click "Add New Employee" to create one.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .table-card {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .table th {
+        background: #f8f9fc;
+        color: #4e73df;
+        font-weight: 600;
+        font-size: 13px;
+        border: none;
+        padding: 12px 15px;
+    }
+    .table td {
+        padding: 12px 15px;
+        vertical-align: middle;
+        border-bottom: 1px solid #e3e6f0;
+    }
+    .table tbody tr:hover {
+        background: #f8f9fc;
+    }
+    .dept-badge {
+        background: #e8eaf6;
+        color: #4e73df;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+        display: inline-block;
+    }
+    .welcome-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: #2c3e50;
+    }
+    .btn-outline-primary {
+        border-color: #4e73df;
+        color: #4e73df;
+    }
+    .btn-outline-primary:hover {
+        background: #4e73df;
+        color: white;
+    }
+    .btn-outline-danger {
+        border-color: #e74a3b;
+        color: #e74a3b;
+    }
+    .btn-outline-danger:hover {
+        background: #e74a3b;
+        color: white;
+    }
+</style>
+
+<script>
+    // Search functionality
+    document.getElementById('searchInput').addEventListener('keyup', function() {
+        let searchValue = this.value.toLowerCase();
+        let rows = document.querySelectorAll('#employeeTable tbody tr');
+        
+        rows.forEach(row => {
+            let name = row.cells[1]?.innerText.toLowerCase() || '';
+            let email = row.cells[2]?.innerText.toLowerCase() || '';
+            let dept = row.cells[3]?.innerText.toLowerCase() || '';
+            if (name.includes(searchValue) || email.includes(searchValue) || dept.includes(searchValue)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+</script>
+{% endblock %}
