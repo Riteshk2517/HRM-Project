@@ -261,6 +261,161 @@ def delete_employee(id):
     
     return redirect(url_for('employees'))
 
+# ========== ROLE MANAGEMENT ROUTES ==========
+
+@app.route('/roles')
+def roles():
+    """Display all roles (excluding soft-deleted/inactive ones)"""
+    try:
+        # Show all roles including inactive for admin view
+        all_roles = Role.query.order_by(Role.role_id.asc()).all()
+        
+        # Count recent roles (last 30 days)
+        thirty_days_ago = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        recent_count = Role.query.filter(Role.created_at >= thirty_days_ago).count()
+        
+        return render_template('roles.html', roles=all_roles, recent_count=recent_count)
+    except Exception as e:
+        flash(f'Error loading roles: {str(e)}', 'danger')
+        return render_template('roles.html', roles=[], recent_count=0)
+@app.route('/role/create', methods=['POST'])
+def create_role():
+    """Create a new role - Only Admin can access (to be implemented)"""
+    role_name = request.form.get('role_name')
+    description = request.form.get('description')
+    status = request.form.get('status') == '1'  # Get status from form
+    
+    if not role_name:
+        flash('Role name is required!', 'danger')
+        return redirect(url_for('roles'))
+    
+    # Check if role already exists
+    existing_role = Role.query.filter_by(role_name=role_name).first()
+    if existing_role:
+        flash(f'Role "{role_name}" already exists!', 'danger')
+        return redirect(url_for('roles'))
+    
+    role = Role(
+        role_name=role_name,
+        description=description,
+        status=status  # Use status from form
+    )
+    
+    try:
+        db.session.add(role)
+        db.session.commit()
+        flash(f'✅ Role "{role_name}" created successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'❌ Error creating role: {str(e)}', 'danger')
+    
+    return redirect(url_for('roles'))
+
+@app.route('/role/get/<int:role_id>')
+def get_role(role_id):
+    """Get role details as JSON for editing"""
+    role = Role.query.get_or_404(role_id)
+    return jsonify({
+        'role_id': role.role_id,
+        'role_name': role.role_name,
+        'description': role.description,
+        'status': role.status
+    })
+
+@app.route('/role/update/<int:role_id>', methods=['POST'])
+def update_role(role_id):
+    """Update role details"""
+    role = Role.query.get_or_404(role_id)
+    
+    role_name = request.form.get('role_name')
+    description = request.form.get('description')
+    status = request.form.get('status') == '1'
+    
+    if not role_name:
+        flash('Role name is required!', 'danger')
+        return redirect(url_for('roles'))
+    
+    # Check if name conflict (excluding current role)
+    existing = Role.query.filter(Role.role_name == role_name, Role.role_id != role_id).first()
+    if existing:
+        flash(f'Role "{role_name}" already exists!', 'danger')
+        return redirect(url_for('roles'))
+    
+    role.role_name = role_name
+    role.description = description
+    role.status = status
+    
+    try:
+        db.session.commit()
+        flash(f'✅ Role "{role_name}" updated successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'❌ Error updating role: {str(e)}', 'danger')
+    
+    return redirect(url_for('roles'))
+
+@app.route('/role/delete/<int:role_id>')
+def delete_role(role_id):
+    """Permanently delete role from database"""
+    role = Role.query.get_or_404(role_id)
+    role_name = role.role_name
+    
+    # Confirm dialog will be handled by JavaScript
+    try:
+        db.session.delete(role)
+        db.session.commit()
+        flash(f'✅ Role "{role_name}" has been permanently deleted from the database!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'❌ Error deleting role: {str(e)}', 'danger')
+    
+    return redirect(url_for('roles'))
+
+@app.route('/test-roles')
+def test_roles():
+    """Test roles table and show all roles"""
+    try:
+        roles = Role.query.all()
+        return f"""
+        <h2>Roles Table Status</h2>
+        <p>Total roles: {len(roles)}</p>
+        <table border="1" cellpadding="10">
+            <tr>
+                <th>ID</th>
+                <th>Role Name</th>
+                <th>Description</th>
+                <th>Status</th>
+                <th>Created At</th>
+            </tr>
+            {''.join([f'<tr><td>{r.role_id}</td><td>{r.role_name}</td><td>{r.description or ""}</td><td>{"Active" if r.status else "Inactive"}</td><td>{r.created_at}</td></tr>' for r in roles])}
+        </table>
+        <br>
+        <a href="/roles">Go to Role Management</a>
+        """
+    except Exception as e:
+        return f"<h2>Error: {str(e)}</h2><p>Please run the SQL script to create the roles table.</p>"
+
+# Add this new model after the Employee class
+class Role(db.Model):
+    __tablename__ = 'roles'
+    role_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    role_name = db.Column(db.String(100), nullable=False, unique=True)
+    description = db.Column(db.String(200))
+    status = db.Column(db.Boolean, default=True)  # True = active, False = inactive (soft delete)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+#  ADD USER MODEL HERE 
+class User(db.Model):
+    __tablename__ = 'users'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    password = db.Column(db.String(200), nullable=False)
+    role_id = db.Column(db.Integer, db.ForeignKey('roles.role_id'))
+    role = db.relationship('Role', backref='users')
+
+
 @app.route('/api/department_stats')
 def department_stats():
     try:

@@ -1,0 +1,371 @@
+{% extends "base.html" %}
+
+{% block title %}Role Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="welcome-header">
+        <h1 class="mb-0">
+            <i class="fas fa-user-tag me-2 text-primary"></i>Role Management
+        </h1>
+        <small class="text-muted">Manage user roles and permissions</small>
+    </div>
+    <button type="button" class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#createRoleModal">
+        <i class="fas fa-plus-circle me-2"></i>Create Role
+    </button>
+</div>
+
+<!-- Role Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <div class="card-body">
+                <h6 class="card-title"><i class="fas fa-tag"></i> TOTAL ROLES</h6>
+                <div class="stat-number">{{ roles|length }}</div>
+                <p class="card-text">Roles in system</p>
+            </div>
+            <div class="stat-icon"><i class="fas fa-tag"></i></div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+            <div class="card-body">
+                <h6 class="card-title"><i class="fas fa-check-circle"></i> ACTIVE ROLES</h6>
+                <div class="stat-number">{{ roles|selectattr('status', 'equalto', true)|list|length }}</div>
+                <p class="card-text">Active roles</p>
+            </div>
+            <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+            <div class="card-body">
+                <h6 class="card-title"><i class="fas fa-user-tag"></i> ADMIN ROLES</h6>
+                <div class="stat-number">{{ roles|selectattr('role_name', 'equalto', 'Admin')|list|length }}</div>
+                <p class="card-text">Administrator roles</p>
+            </div>
+            <div class="stat-icon"><i class="fas fa-user-shield"></i></div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+            <div class="card-body">
+                <h6 class="card-title"><i class="fas fa-chart-line"></i> CREATED THIS MONTH</h6>
+                <div class="stat-number">{{ recent_count }}</div>
+                <p class="card-text">Last 30 days</p>
+            </div>
+            <div class="stat-icon"><i class="fas fa-calendar-alt"></i></div>
+        </div>
+    </div>
+</div>
+
+<!-- Roles Table -->
+<div class="table-card">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0 fw-bold">
+            <i class="fas fa-list me-2 text-primary"></i>All Roles
+        </h5>
+        <div class="input-group w-auto">
+            <span class="input-group-text bg-white"><i class="fas fa-search"></i></span>
+            <input type="text" id="searchInput" class="form-control" placeholder="Search roles..." style="width: 250px;">
+        </div>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table table-hover" id="roleTable">
+            <thead>
+                <tr>
+                    <th>Sr. No</th>
+                    <th>Role Name</th>
+                    <th>Role Description</th>
+                    <th>Status</th>
+                    <th>Created At</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for role in roles %}
+                <tr>
+                    <td><span class="badge bg-secondary">#{{ loop.index }}</span></td>
+                    <td>
+                        <strong>{{ role.role_name }}</strong>
+                    </td>
+                    <td>
+                        <div style="max-width: 300px;">
+                            {{ role.description[:80] + '...' if role.description and role.description|length > 80 else role.description or '—' }}
+                        </div>
+                    </td>
+                    <td>
+                        {% if role.status %}
+                            <span class="status-badge status-active">
+                                <i class="fas fa-circle me-1" style="font-size: 8px;"></i> Active
+                            </span>
+                        {% else %}
+                            <span class="status-badge status-inactive">
+                                <i class="fas fa-circle me-1" style="font-size: 8px;"></i> Inactive
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <small>{{ role.created_at.strftime('%d/%m/%Y') if role.created_at else '—' }}</small>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="editRole({{ role.role_id }})" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteRole({{ role.role_id }}, '{{ role.role_name }}')" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-5">
+                        <i class="fas fa-user-tag fa-3x text-muted mb-3"></i>
+                        <p class="text-muted mb-0">No roles found. Click "Create Role" to add one.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Create Role Modal -->
+<div class="modal fade" id="createRoleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus-circle me-2 text-primary"></i>Create New Role
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('create_role') }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="role_name" class="form-label fw-bold">Role Name *</label>
+                        <input type="text" class="form-control" id="role_name" name="role_name" required 
+                               placeholder="e.g., Admin, Manager, Team Leader, Employee">
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label fw-bold">Role Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="4" 
+                                  placeholder="Describe the responsibilities and permissions for this role..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="status" class="form-label fw-bold">Status</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="1">Active</option>
+                            <option value="0">Inactive</option>
+                        </select>
+                        <small class="text-muted">Set the role as active or inactive</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Create Role
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Role Modal -->
+<div class="modal fade" id="editRoleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit me-2 text-warning"></i>Update Role Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editRoleForm" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit_role_name" class="form-label fw-bold">Role Name</label>
+                        <input type="text" class="form-control" id="edit_role_name" name="role_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_description" class="form-label fw-bold">Role Description</label>
+                        <textarea class="form-control" id="edit_description" name="description" rows="4"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Status</label>
+                        <select class="form-select" id="edit_status" name="status">
+                            <option value="1">Active</option>
+                            <option value="0">Inactive</option>
+                        </select>
+                        <small class="text-muted">Change role status (inactive roles won't be usable)</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Update Role
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .stat-card {
+        border: none;
+        border-radius: 15px;
+        overflow: hidden;
+        position: relative;
+        height: 140px;
+        transition: transform 0.3s, box-shadow 0.3s;
+        cursor: pointer;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+    .stat-card .card-body {
+        padding: 20px;
+        height: 100%;
+        position: relative;
+        z-index: 2;
+        color: white;
+    }
+    .stat-card .card-title {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 12px;
+        opacity: 0.9;
+    }
+    .stat-card .stat-number {
+        font-size: 36px;
+        font-weight: 800;
+        margin-bottom: 8px;
+        line-height: 1;
+    }
+    .stat-card .card-text {
+        font-size: 11px;
+        margin-bottom: 0;
+        opacity: 0.8;
+    }
+    .stat-icon {
+        position: absolute;
+        right: 15px;
+        bottom: 15px;
+        font-size: 55px;
+        opacity: 0.12;
+        transition: all 0.3s ease;
+        color: white;
+    }
+    .stat-card:hover .stat-icon {
+        opacity: 0.2;
+        transform: scale(1.05);
+    }
+    .table-card {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .table th {
+        background: #f8f9fc;
+        color: #4e73df;
+        font-weight: 600;
+        font-size: 13px;
+        border: none;
+        padding: 12px 15px;
+    }
+    .table td {
+        padding: 12px 15px;
+        vertical-align: middle;
+        border-bottom: 1px solid #e3e6f0;
+    }
+    .table tbody tr:hover {
+        background: #f8f9fc;
+    }
+    .status-badge {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .status-active {
+        background: #d1fae5;
+        color: #065f46;
+    }
+    .status-inactive {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+    .welcome-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: #2c3e50;
+    }
+    .btn-outline-primary {
+        border-color: #4e73df;
+        color: #4e73df;
+    }
+    .btn-outline-primary:hover {
+        background: #4e73df;
+        color: white;
+    }
+    .btn-outline-danger {
+        border-color: #e74a3b;
+        color: #e74a3b;
+    }
+    .btn-outline-danger:hover {
+        background: #e74a3b;
+        color: white;
+    }
+</style>
+
+<script>
+    // Search functionality
+    document.getElementById('searchInput').addEventListener('keyup', function() {
+        let searchValue = this.value.toLowerCase();
+        let rows = document.querySelectorAll('#roleTable tbody tr');
+        
+        rows.forEach(row => {
+            let roleName = row.cells[1]?.innerText.toLowerCase() || '';
+            let description = row.cells[2]?.innerText.toLowerCase() || '';
+            let status = row.cells[3]?.innerText.toLowerCase() || '';
+            if (roleName.includes(searchValue) || description.includes(searchValue) || status.includes(searchValue)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+    
+    function editRole(roleId) {
+        fetch(`/role/get/${roleId}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('edit_role_name').value = data.role_name;
+                document.getElementById('edit_description').value = data.description || '';
+                document.getElementById('edit_status').value = data.status ? '1' : '0';
+                document.getElementById('editRoleForm').action = `/role/update/${roleId}`;
+                new bootstrap.Modal(document.getElementById('editRoleModal')).show();
+            })
+            .catch(error => {
+                console.error('Error fetching role:', error);
+                alert('Error loading role details');
+            });
+    }
+    
+    function deleteRole(roleId, roleName) {
+        if (confirm(`⚠️ WARNING: You are about to PERMANENTLY DELETE the role "${roleName}".\n\nThis action cannot be undone!\n\nAre you sure you want to proceed?`)) {
+            window.location.href = `/role/delete/${roleId}`;
+        }
+    }
+</script>
+{% endblock %}
