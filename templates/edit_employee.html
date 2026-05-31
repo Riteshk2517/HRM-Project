@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Employee{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col">
+                <h1 class="page-title">
+                    <i class="fas fa-user-edit text-primary me-2"></i>
+                    Update Employee Details
+                </h1>
+                <p class="text-white-50">Edit employee information below</p>
+            </div>
+            <div class="col-auto">
+                <a href="{{ url_for('employees') }}" class="btn btn-light">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-edit me-2"></i> Update Employee: {{ employee.first_name }} {{ employee.last_name or '' }}</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('edit_employee', id=employee.employee_id) }}">
+                <div class="row">
+                    <!-- Personal Information -->
+                    <div class="col-md-12 mb-4">
+                        <h6 class="section-title"><i class="fas fa-user me-2"></i> Personal Details</h6>
+                        <hr>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="first_name" class="form-label">First Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="first_name" name="first_name" value="{{ employee.first_name }}" required>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="last_name" class="form-label">Last Name</label>
+                        <input type="text" class="form-control" id="last_name" name="last_name" value="{{ employee.last_name or '' }}">
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                        <input type="email" class="form-control" id="email" name="email" value="{{ employee.email }}" required>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" name="username" value="{{ employee.username }}" style="background-color: #f5f5f5;">
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="mobile" class="form-label">Mobile Number</label>
+                        <input type="tel" class="form-control" id="mobile" name="mobile" value="{{ employee.mobile or '' }}">
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="phone" class="form-label">Phone</label>
+                        <input type="tel" class="form-control" id="phone" name="phone" value="{{ employee.phone or '' }}">
+                    </div>
+                    
+                    <div class="col-md-12 mb-3">
+                        <label for="home_address" class="form-label">Home Address</label>
+                        <textarea class="form-control" id="home_address" name="home_address" rows="2">{{ employee.home_address or '' }}</textarea>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="password" class="form-label">Set New Password</label>
+                        <input type="password" class="form-control" id="password" name="password" placeholder="Leave blank to keep current password">
+                        <small class="text-muted">Leave blank to keep existing password</small>
+                    </div>
+                    
+                    <!-- Employment Information -->
+                    <div class="col-md-12 mb-4 mt-3">
+                        <h6 class="section-title"><i class="fas fa-briefcase me-2"></i> Employment Details</h6>
+                        <hr>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="role_id" class="form-label">Select Role</label>
+                        <select class="form-select" id="role_id" name="role_id">
+                            <option value="">Select Role</option>
+                            {% for role in roles %}
+                            <option value="{{ role.role_id }}" {% if employee.role_id == role.role_id %}selected{% endif %}>
+                                {{ role.role_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="dept_id" class="form-label">Select Department</label>
+                        <select class="form-select" id="dept_id" name="dept_id">
+                            <option value="">Select Department</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept.id }}" {% if employee.dept_id == dept.id %}selected{% endif %}>
+                                {{ dept.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="reporting_manager_id" class="form-label">Reporting Manager</label>
+                        <select class="form-select" id="reporting_manager_id" name="reporting_manager_id">
+                            <option value="">Select Reporting Manager</option>
+                            {% for manager in managers %}
+                            <option value="{{ manager.employee_id }}" {% if employee.reporting_manager_id == manager.employee_id %}selected{% endif %}>
+                                {{ manager.first_name }} {{ manager.last_name or '' }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="date_of_joining" class="form-label">Date of Joining</label>
+                        <input type="date" class="form-control" id="date_of_joining" name="date_of_joining" value="{{ employee.date_of_joining.strftime('%Y-%m-%d') if employee.date_of_joining else '' }}">
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="company" class="form-label">Company</label>
+                        <input type="text" class="form-control" id="company" name="company" value="{{ employee.company or '' }}">
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="contact_number" class="form-label">Contact Number</label>
+                        <input type="tel" class="form-control" id="contact_number" name="contact_number" value="{{ employee.contact_number or '' }}">
+                    </div>
+                    
+                    <!-- Financial Information -->
+                    <div class="col-md-12 mb-4 mt-3">
+                        <h6 class="section-title"><i class="fas fa-chart-line me-2"></i> Financial Details</h6>
+                        <hr>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="secret_rate" class="form-label">Secret Rate</label>
+                        <input type="number" step="0.01" class="form-control" id="secret_rate" name="secret_rate" value="{{ employee.secret_rate or 0 }}">
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="stock_information" class="form-label">Stock Information</label>
+                        <input type="text" class="form-control" id="stock_information" name="stock_information" value="{{ employee.stock_information or '' }}">
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="discount_percentage" class="form-label">Discount Percentage</label>
+                        <input type="number" step="0.01" class="form-control" id="discount_percentage" name="discount_percentage" value="{{ employee.discount_percentage or 0 }}">
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="last_payment" class="form-label">Last Payment Date</label>
+                        <input type="date" class="form-control" id="last_payment" name="last_payment" value="{{ employee.last_payment.strftime('%Y-%m-%d') if employee.last_payment else '' }}">
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> Update Employee
+                    </button>
+                    <a href="{{ url_for('employees') }}" class="btn btn-secondary ms-2">
+                        <i class="fas fa-times me-1"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .page-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 20px;
+        padding: 25px 30px;
+        color: white;
+    }
+    .page-title {
+        font-size: 28px;
+        font-weight: 700;
+        margin: 0;
+        color: white;
+    }
+    .section-title {
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 0;
+    }
+    .card {
+        border-radius: 20px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        border: none;
+    }
+    .card-header {
+        border-radius: 20px 20px 0 0 !important;
+        background: linear-gradient(135deg, #667eea, #764ba2) !important;
+    }
+    .form-label {
+        font-weight: 500;
+        color: #4a5568;
+    }
+    .form-control, .form-select {
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+        padding: 10px 15px;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+</style>
+{% endblock %}

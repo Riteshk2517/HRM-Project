@@ -87,23 +87,31 @@
                     <h3><i class="fas fa-chalkboard-user me-2"></i>HRM System</h3>
                 </div>
                 <nav class="nav flex-column">
-    <a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
-        <i class="fas fa-tachometer-alt"></i> Dashboard
-    </a>
-    <a class="nav-link {% if request.endpoint == 'departments' %}active{% endif %}" href="{{ url_for('departments') }}">
-        <i class="fas fa-building"></i> Departments
-    </a>
-    <a class="nav-link {% if request.endpoint == 'employees' %}active{% endif %}" href="{{ url_for('employees') }}">
-        <i class="fas fa-users"></i> Employees
-    </a>
-    <a class="nav-link {% if request.endpoint == 'roles' %}active{% endif %}" href="{{ url_for('roles') }}">
-        <i class="fas fa-user-tag"></i> Roles
-    </a>
-    <a class="nav-link" href="#"><i class="fas fa-tasks"></i> Tasks</a>
-    <a class="nav-link" href="#"><i class="fas fa-calendar-alt"></i> Leaves</a>
-    <a class="nav-link" href="#"><i class="fas fa-chart-line"></i> Performance</a>
-    <a class="nav-link" href="#"><i class="fas fa-cog"></i> Settings</a>
-</nav>
+                    <a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                    <a class="nav-link {% if request.endpoint == 'departments' %}active{% endif %}" href="{{ url_for('departments') }}">
+                        <i class="fas fa-building"></i> Departments
+                    </a>
+                    <a class="nav-link {% if request.endpoint == 'roles' %}active{% endif %}" href="{{ url_for('roles') }}">
+                        <i class="fas fa-user-tag"></i> Roles
+                    </a>
+                    <a class="nav-link {% if request.endpoint == 'employees' %}active{% endif %}" href="{{ url_for('employees') }}">
+                        <i class="fas fa-users"></i> Employees
+                    </a>
+                    <a class="nav-link" href="#">
+                        <i class="fas fa-tasks"></i> Tasks
+                    </a>
+                    <a class="nav-link" href="#">
+                        <i class="fas fa-calendar-alt"></i> Leaves
+                    </a>
+                    <a class="nav-link" href="#">
+                        <i class="fas fa-chart-line"></i> Performance
+                    </a>
+                    <a class="nav-link" href="#">
+                        <i class="fas fa-cog"></i> Settings
+                    </a>
+                </nav>
             </div>
             <div class="col main-content">
                 {% with messages = get_flashed_messages(with_categories=true) %}

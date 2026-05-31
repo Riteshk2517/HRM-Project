@@ -31,41 +31,65 @@
         <table class="table table-hover" id="employeeTable">
             <thead>
                 <tr>
-                    <th>ID</th>
+                    <th>Sr. No</th>
+                    <!-- Employee ID column removed -->
                     <th>Name</th>
                     <th>Email</th>
+                    <th>Role</th>
                     <th>Department</th>
-                    <th>Position</th>
-                    <th>Phone</th>
-                    <th>Salary</th>
-                    <th>Hire Date</th>
+                    <th>Reporting Manager</th>
+                    <th>Mobile</th>
+                    <th>Joining Date</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for emp in employees %}
                 <tr>
-                    <td><span class="badge bg-secondary">#{{ emp.id }}</span></td>
-                    <td><strong>{{ emp.name }}</strong></td>
-                    <td>{{ emp.email or '—' }}</td>
+                    <td class="text-center"><strong>{{ loop.index }}</strong></td>
+                    <!-- Employee ID cell removed -->
                     <td>
-                        {% if emp.department %}
-                            <span class="dept-badge">{{ emp.department.name }}</span>
+                        <div class="employee-info">
+                            <div class="employee-avatar">
+                                {{ emp.first_name[0] }}{{ emp.last_name[0] if emp.last_name else '' }}
+                            </div>
+                            <div>
+                                <strong>{{ emp.first_name }} {{ emp.last_name or '' }}</strong><br>
+                                <small class="text-muted">@{{ emp.username }}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{ emp.email }}</td>
+                    <td>
+                        {% if emp.role %}
+                        <span class="role-badge">{{ emp.role.role_name }}</span>
                         {% else %}
-                            <span class="text-muted">Not Assigned</span>
+                        <span class="text-muted">Not Assigned</span>
                         {% endif %}
                     </td>
-                    <td>{{ emp.position or '—' }}</td>
-                    <td>{{ emp.phone or '—' }}</td>
-                    <td>₹{{ emp.salary|round|int if emp.salary else 0 }}</td>
-                    <td>{{ emp.hire_date.strftime('%d/%m/%Y') if emp.hire_date else '—' }}</td>
                     <td>
-                        <a href="{{ url_for('edit_employee', id=emp.id) }}" class="btn btn-sm btn-outline-primary me-1" title="Edit">
+                        {% if emp.department %}
+                        <span class="dept-badge">{{ emp.department.name }}</span>
+                        {% else %}
+                        <span class="text-muted">Not Assigned</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if emp.reporting_manager %}
+                        {{ emp.reporting_manager.first_name }} {{ emp.reporting_manager.last_name or '' }}
+                        {% else %}
+                        <span class="text-muted">None</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ emp.mobile or '—' }}</td>
+                    <td>{{ emp.date_of_joining.strftime('%d/%m/%Y') if emp.date_of_joining else '—' }}</td>
+                    <td>
+                        <a href="{{ url_for('edit_employee', id=emp.employee_id) }}" class="btn btn-sm btn-outline-primary me-1" title="Edit">
                             <i class="fas fa-edit"></i>
                         </a>
-                        <a href="{{ url_for('delete_employee', id=emp.id) }}" class="btn btn-sm btn-outline-danger" title="Delete" onclick="return confirm('Are you sure you want to delete this employee?')">
+                        <button class="btn btn-sm btn-outline-danger" title="Delete" onclick="confirmDelete({{ emp.employee_id }}, '{{ emp.first_name }} {{ emp.last_name or '' }}')">
                             <i class="fas fa-trash"></i>
-                        </a>
+                        </button>
                     </td>
                 </tr>
                 {% else %}
@@ -104,9 +128,35 @@
     .table tbody tr:hover {
         background: #f8f9fc;
     }
-    .dept-badge {
+    .employee-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .employee-avatar {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 14px;
+    }
+    .role-badge {
         background: #e8eaf6;
         color: #4e73df;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+        display: inline-block;
+    }
+    .dept-badge {
+        background: #e8f5e9;
+        color: #27ae60;
         padding: 5px 12px;
         border-radius: 20px;
         font-size: 12px;
@@ -134,6 +184,12 @@
         background: #e74a3b;
         color: white;
     }
+    .text-center {
+        text-align: center;
+    }
+    strong {
+        font-weight: 600;
+    }
 </style>
 
 <script>
@@ -141,17 +197,29 @@
     document.getElementById('searchInput').addEventListener('keyup', function() {
         let searchValue = this.value.toLowerCase();
         let rows = document.querySelectorAll('#employeeTable tbody tr');
+        let serialNumber = 1;
         
         rows.forEach(row => {
-            let name = row.cells[1]?.innerText.toLowerCase() || '';
-            let email = row.cells[2]?.innerText.toLowerCase() || '';
-            let dept = row.cells[3]?.innerText.toLowerCase() || '';
-            if (name.includes(searchValue) || email.includes(searchValue) || dept.includes(searchValue)) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
+            if (row.cells.length > 1 && row.cells[0] && row.cells[0].innerText) {
+                let name = row.cells[1]?.innerText.toLowerCase() || '';
+                let email = row.cells[2]?.innerText.toLowerCase() || '';
+                let role = row.cells[3]?.innerText.toLowerCase() || '';
+                let dept = row.cells[4]?.innerText.toLowerCase() || '';
+                
+                if (name.includes(searchValue) || email.includes(searchValue) || role.includes(searchValue) || dept.includes(searchValue)) {
+                    row.style.display = '';
+                    row.cells[0].innerText = serialNumber++;
+                } else {
+                    row.style.display = 'none';
+                }
             }
         });
     });
+    
+    function confirmDelete(employeeId, employeeName) {
+        if (confirm(`Are you sure you want to delete "${employeeName}"? This action cannot be undone.`)) {
+            window.location.href = `/employee/delete/${employeeId}`;
+        }
+    }
 </script>
 {% endblock %}
